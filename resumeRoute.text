@@ -1,0 +1,88 @@
+
+Make resume related functionlity according to internshala resume section =======================================
+
+1.congire route in app.js 
+
+**********
+//routes
+app.use("/user",require("./routes/indexRoutes"))
+app.use("/resume",require("./routes/resumeRoutes"))
+*************
+
+2.make file resumeRoutes inside routes FOLDER that contain all route realted to resume 
+***************
+const express=require("express");
+const router=express.Router()
+
+const {resume } = require("../controllers/resumeController");
+const { isAuthenticated } = require("../middleware/auth");
+
+
+//GET /
+router.get("/",isAuthenticated,resume)
+
+module.exports=router
+***********************
+
+3.make controller file inside controller FOLDER resumeController.js
+***************
+const ErrorHandler = require("../helpers/ErrorHandler");
+const { catchAsyncerror } = require("../middleware/catchAsyncerror");
+const Student = require("../models/studentModel");
+
+exports.resume=catchAsyncerror( async(req,res,next)=>{
+res.json({message:"Secure Resume home page "})
+})
+********************
+
+
+4.add one more field inside student model 
+***************
+   resume:{
+      education:[],
+      jobs:[],
+      internships:[],
+      responsibilities:[],
+      courses:[],
+      projects:[],
+      skills:[],
+      accomplishments:[]
+    },
+*********************
+
+5. inside routing page 
+inside controller (exports.resume)  find student by id and get resume field and ,send resume inside response.json
+
+*********************
+exports.resume = catchAsyncerror(async (req, res, next) => {
+  const {resume} = Student.findById(req.id).exec();
+  res.json({ message: "Secure Resume home page ",resume });
+});
+
+show reume field 
+*************************
+
+
+6.make POST route and controller for this route for add-aducation
+-jo bhi aducation data aayega vo req.body mai milega ,us data ko resume k and aducation mai push kr denge 
+-req.id ke sath sath hum ek unique ID bhi pass krenge 
+    -- unique id create / add krne ke liye hum npm pacakge npm i uuid ka use krenge 
+    ----npm i uuid
+    ----require uuid  
+             const { v4: uuidv4 } = require('uuid');
+    ----call uuidv4 function whenever your need to create unique ID 
+              uuidv4();
+***********
+
+exports.addeducation = catchAsyncerror(async (req, res, next) => {
+  const {resume} = Student.findById(req.id).exec();
+
+  resume.education.push(req.body);
+  await Student.save();
+  res.json({ message: "Education Added ",resume });
+});
+****************
+
+
+
+

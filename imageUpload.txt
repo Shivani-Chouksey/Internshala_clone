@@ -1,0 +1,194 @@
+Lecture -6 
+
+use (imagekit[web service provider app  hai jaha hum apni image upload krayenge or link k jariye image ko database mai dsave krayenge ] and [upload krne k liye zarurt hai ] express-fileupload[it provide re])(multer) for upload image on database
+
+
+step 1-
+ npm i imagekit express-fileupload
+
+step2 -
+  make POST   [/student/avtar/:id]  route  and controller [student avtar] 
+
+  ab image dalkr  route hit krte hai  hai to 
+  res.json({file:req.files})
+ mai blank {} object milega 
+
+
+step3- 
+configer express-fileupload in aap.js file 
+like this 
+
+const fileupload=require("express-fileupload");
+app.use(fileupload())
+
+
+-in 2 line ka use krne se ab hume
+      res.json({file:req.files})
+mai data el object {}milega usme name,data rhega 
+-in line ne data ko binary ya buffer mai image data ko convert kr diya hai 
+-isi image ko ab  hume image kit pr upload krna hai 
+
+
+
+ tep 4-
+ upload krne k liye 
+1- sbse phle schema mai change krne honge Q KRNA hai qki ab jo data milega vo ek object hoga 
+
+  avatar: {
+      type:Object,
+      default:{
+        fileId:"",
+        url:"https://plus.unsplash.com/premium_photo-1669674583837-345867b97c23?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxlZGl0b3JpYWwtZmVlZHwyMnx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=60"
+      }
+    },
+
+step4-
+-open image kit website https://imagekit.io/
+-login
+-developer option - >code snippet -> selcet node.js->copy code 
+
+step-5
+make new file in helper /  as a helper 
+-imagekit.js 
+paste code inside function of  this file
+
+
+step -6
+
+publicKey: "public_JOTetBs26Cr7669qjucFPqUb7SE=",
+        privateKey: "private_MErmxRYHGn******************",
+        urlEndpoint: "https://ik.imagekit.io/27vbtwfwl",
+
+ store this data into .env file variable like and paste your pulicekey ,privatekey,endpoint url 
+
+ PULICEKEY_IMAGEKIT="public_JOTetBs26Cr7669qjucFPqUb7SE="
+
+
+
+ and use like that in function
+  publicKey: process.env.PULICEKEY_IMAGEKIT,
+
+
+ab imagekit initialize ho chuka hai 
+
+step-7 
+goto to controller file
+require image kit and use initImageKit
+
+like that 
+const imagekit = require("../helpers/imageKit").initImageKit();
+
+
+
+step-8
+goto to controller function
+
+-in that function sbse phle hum model ko find krenge req.params.id ka use krke 
+like  
+  const student = await Student.findById(req.params.id).exec();
+  -file nikalenge
+  const file = req.files.avatar;       avatar name ke jgh jo name image k liye schema mai rkha hai vo aa jayega 
+
+ - file ka uniqe name bnayenge apne according 
+  const modifiedName = `resumebuilder-${Date.now()}${path.extname(file.name)}`;
+
+ - path ka use extension name nikalne k liye kiya hai like .jpg,.png..........
+  require path  -
+const path = require("path")
+
+-ek const bnayenge or imagekit.upload() mai file.data or modifiedName de denge 
+  const image = await imagekit.upload({
+    file: file.data,
+    fileName: modifiedName,
+  });
+
+  -res.json(image); 
+  krke check krenge file imagekit.io pr upload ho rhi hai ya nhi 
+
+-in place of image fileIdor url nikal lenge 
+ const {fileId,url} = await imagekit.upload({
+    file: file.data,
+    fileName: modifiedName,
+  });
+
+ == complete controller function ====
+  exports.studentavtar = catchAsyncerror(async (req, res, next) => {
+  const student = await Student.findById(req.params.id).exec();
+  const file = req.files.avatar;
+  const modifiedName = `resumebuilder-${Date.now()}${path.extname(file.name)}`;
+  const {fileId,url}  = await imagekit.upload({
+    file: file.data,
+    fileName: modifiedName,
+  });
+
+  Student.avatar={fileId,url}
+
+  res.json(image);
+});
+
+-code is working image show on image.io website
+
+*****ab fileId or url ko database /model mai add krke  save kra denge or res send kr denge ****
+  student.avatar={fileId,url}
+  student.save()
+res.status(200).json({success:true, message: "Profile Updated" });
+
+
+
+***********************************************
+exports.studentavtar = catchAsyncerror(async (req, res, next) => {
+  const student = await Student.findById(req.params.id).exec();
+  const file = req.files.avatar;
+  const modifiedName = `resumebuilder-${Date.now()}${path.extname(file.name)}`;
+  const {fileId,url} = await imagekit.upload({
+    file: file.data,
+    fileName: modifiedName,
+  });
+
+  student.avatar={fileId,url}
+student.save()
+res.status(200).json({success:true, message: "Profile Updated" });
+
+});
+****************************************************
+
+abhi dobara same file upload krne pr file ki same copy image.io pr bn rhi hai 
+
+ise rokne (same file phle se hai to purani file remove ho jaye new us place pr a jaye ) k liye  condition lagni degi controller mai 
+
+
+ if(student.avatar.fileId !== ""){
+    await imagekit.deleteFile(student.avatar.fileId)
+  }
+
+*********************************************************
+exports.studentavtar = catchAsyncerror(async (req, res, next) => {
+  const student = await Student.findById(req.params.id).exec();
+  const file = req.files.avatar;
+  const modifiedName = `resumebuilder-${Date.now()}${path.extname(file.name)}`;
+  
+  if(student.avatar.fileId !== ""){
+    await imagekit.deleteFile(student.avatar.fileId)
+  }
+
+
+  const {fileId,url} = await imagekit.upload({
+    file: file.data,
+    fileName: modifiedName,
+  });
+
+  student.avatar={fileId,url}
+student.save()
+res.status(200).json({success:true, message: "Profile Updated" });
+
+});
+
+**************************************************************
+
+
+
+
+
+
+
+
